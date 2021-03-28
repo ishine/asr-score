@@ -59,11 +59,12 @@ def deletion_score_function(token):
     return -1.0
 
 def EditDistance(
-    ref,
-    hyp, 
-    similarity_score_function = similarity_score_function,
-    insertion_score_function = insertion_score_function,
-    deletion_score_function = deletion_score_function):
+        ref,
+        hyp, 
+        similarity_score_function = similarity_score_function,
+        insertion_score_function = insertion_score_function,
+        deletion_score_function = deletion_score_function):
+    assert(len(ref) != 0)
     class DPState:
         def __init__(self):
             self.score = -float('inf')
@@ -164,12 +165,6 @@ def EditDistance(
     best_path.reverse()
     return (best_path, best_score)
 
-def PrintAlignmentArc(arc, stream = sys.stderr):
-    if DEBUG:
-        pass
-    else:
-        print(F'{arc.ref} {arc.hyp} {arc.edit_type}', file=stream)
-
 def PrettyPrintAlignment(alignment, stream = sys.stderr):
     def get_token_str(token):
         if token == None:
@@ -191,11 +186,14 @@ def PrettyPrintAlignment(alignment, stream = sys.stderr):
                 m += 1
         return m
 
-    R = '    REF: '
-    H = '    HYP: '
-    E = '   EDIT: '
+    R = '  REF  : '
+    H = '  HYP  : '
+    E = '  EDIT : '
     for arc in alignment:
-        r, h, e = get_token_str(arc.ref), get_token_str(arc.hyp), arc.edit_type if arc.edit_type != 'C' else ''
+        r = get_token_str(arc.ref)
+        h = get_token_str(arc.hyp)
+        e = arc.edit_type if arc.edit_type != 'C' else ''
+
         nr, nh, ne = display_width(r), display_width(h), display_width(e)
         n = max(nr, nh, ne) + 1
 
@@ -207,7 +205,7 @@ def PrettyPrintAlignment(alignment, stream = sys.stderr):
     print(H, file=stream)
     print(E, file=stream)
 
-def ComputeEdits(alignment):
+def CountEdits(alignment):
     c, s, i, d = 0, 0, 0, 0
     for arc in alignment:
         if arc.edit_type == 'C':
@@ -225,52 +223,69 @@ def ComputeEdits(alignment):
 def ComputeTokenErrorRate(c, s, i, d):
     return 100.0 * (s + d + i) / (s + d + c)
 
+def ComputeSentenceErrorRate(num_err_utts, num_utts):
+    assert(num_utts != 0)
+    return 100.0 * num_err_utts / num_utts
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--ref', type=str, required=True, help='reference')
     parser.add_argument('--hyp', type=str, required=True, help='hypothesis')
     args = parser.parse_args()
 
-    ref_utts = LoadUtterances(args.ref); print(F'{len(ref_utts)} REF utterances loaded.', file=sys.stderr)
-    hyp_utts = LoadUtterances(args.hyp); print(F'{len(hyp_utts)} HYP utterances loaded.', file=sys.stderr)
+    ref_utts = LoadUtterances(args.ref); # print(F'{len(ref_utts)} REF utterances loaded.', file=sys.stderr)
+    hyp_utts = LoadUtterances(args.hyp); # print(F'{len(hyp_utts)} HYP utterances loaded.', file=sys.stderr)
 
-    intersected_utts = []
+    utts = []
+    num_hyp_without_ref = 0
     for uid in sorted(hyp_utts.keys()):
-        if uid in ref_utts.keys():
-          intersected_utts.append(uid)
-    print(F'{len(intersected_utts)} intersected REF:HYP utterances.', file=sys.stderr)
+        if uid in ref_utts.keys(): # TODO: efficiency
+            if ref_utts[uid].text.strip(): # non empty reference
+                utts.append(uid)
+            else:
+                print(F'WARNING: found {uid} with empty reference, skipping...', file=sys.stderr)
+                continue
+        else:
+            num_hyp_without_ref += 1
+    num_utts = len(utts)
+    # print(F'{num_utts} matched REF:HYP utterances.', file=sys.stderr)
 
-    sum_c, sum_s, sum_i, sum_d = 0, 0, 0, 0
+    C, S, I, D = 0, 0, 0, 0
     num_err_utts = 0
-    num_utts = len(intersected_utts)
-    for uid in intersected_utts:
+    for uid in utts:
         alignment, score = EditDistance(ref_utts[uid].tokens, hyp_utts[uid].tokens)
-        c, s, i, d = ComputeEdits(alignment)
+        c, s, i, d = CountEdits(alignment)
         utt_ter = ComputeTokenErrorRate(c, s, i, d)
         print(F'{{"uid":{uid}, "score":{score}, "ter":{utt_ter:.2f}, "cor":{c}, "sub":{s}, "ins":{i}, "del":{d}}}', file=sys.stderr)
         PrettyPrintAlignment(alignment)
 
-        sum_c += c
-        sum_s += s
-        sum_i += i
-        sum_d += d
+        C += c
+        S += s
+        I += i
+        D += d
 
         if utt_ter > 0:
             num_err_utts += 1
-    
-    ter = ComputeTokenErrorRate(sum_c, sum_s, sum_i, sum_d)
-    ser = 100.0 * num_err_utts / num_utts
-    # print('========== Overall Statistics ==========')
-    # print(F'Number utterances in REF: {len(ref_utts)}')
-    # print(F'Number utterances in HYP: {len(hyp_utts)}')
-    # print(F'Number utterances REF:HYP: {len(intersected_utts)}')
-    # print(F'Token Error Rate: {ter:.2f}')
-    # print(F'  Correct:      {sum_c}')
-    # print(F'  Substitution: {sum_s}')
-    # print(F'  Insertion:    {sum_i}')
-    # print(F'  Deletion:     {sum_d}')
-    # print('========================================')
+
+    ser = ComputeSentenceErrorRate(num_err_utts, num_utts)   
+    ter = ComputeTokenErrorRate(C, S, I, D)
+
+    summary = (
+        '==================== Overall Statistics ====================\n'
+        F'REF: {len(ref_utts)} utterances\n'
+        F'HYP: {len(hyp_utts)} utterances\n'
+        F'HYP with REF: {num_utts} utterances\n'
+        F'HYP without REF: {num_hyp_without_ref} utterances\n'
+        F'Sentence Error Rate: {ser:.2f}\n'
+        F'Token Error Rate: {ter:.2f}\n'
+        F'  - Correct:      {C}\n'
+        F'  - Substitution: {S}\n'
+        F'  - Insertion:    {I}\n'
+        F'  - Deletion:     {D}\n'
+        '============================================================\n'
+    )
+    print(summary, file=sys.stderr)
 
     ## Kaldi compatible logging
-    print(F'%WER {ter:.2f} [ {sum_s + sum_d + sum_i} / {sum_c + sum_s + sum_d}, {sum_i} ins, {sum_d} del, {sum_s} sub ]')
-    print(F'%SER {ser:.2f} [ {num_err_utts} / {len(intersected_utts)} ]')
+    print(F'%WER {ter:.2f} [ {S + D + I} / {C + S + D}, {I} ins, {D} del, {S} sub ]')
+    print(F'%SER {ser:.2f} [ {num_err_utts} / {num_utts} ]')
