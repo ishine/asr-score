@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# coding=utf8
 
 # Copyright  2021  Jiayu DU
 
@@ -35,7 +36,7 @@ class AlignmentArc:
 
 def LoadUtterances(filepath):
     utts = {}
-    with open(filepath, 'r') as f:
+    with open(filepath, 'r', encoding='utf8') as f:
         for line in f:
             line = line.strip()
             if line:
@@ -231,6 +232,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--ref', type=str, required=True, help='reference')
     parser.add_argument('--hyp', type=str, required=True, help='hypothesis')
+    parser.add_argument('alignment', type=str)
     args = parser.parse_args()
 
     ref_utts = LoadUtterances(args.ref); # print(F'{len(ref_utts)} REF utterances loaded.', file=sys.stderr)
@@ -250,14 +252,15 @@ if __name__ == '__main__':
     num_utts = len(utts)
     # print(F'{num_utts} matched REF:HYP utterances.', file=sys.stderr)
 
+    fo = open(args.alignment, 'w+', encoding='utf8')
     C, S, I, D = 0, 0, 0, 0
     num_err_utts = 0
     for uid in utts:
         alignment, score = EditDistance(ref_utts[uid].tokens, hyp_utts[uid].tokens)
         c, s, i, d = CountEdits(alignment)
         utt_ter = ComputeTokenErrorRate(c, s, i, d)
-        print(F'{{"uid":{uid}, "score":{score}, "ter":{utt_ter:.2f}, "cor":{c}, "sub":{s}, "ins":{i}, "del":{d}}}', file=sys.stderr)
-        PrettyPrintAlignment(alignment)
+        print(F'{{"uid":{uid}, "score":{score}, "ter":{utt_ter:.2f}, "cor":{c}, "sub":{s}, "ins":{i}, "del":{d}}}', file=fo)
+        PrettyPrintAlignment(alignment, fo)
 
         C += c
         S += s
@@ -284,7 +287,8 @@ if __name__ == '__main__':
         F'  - Deletion:     {D}\n'
         '============================================================\n'
     )
-    print(summary, file=sys.stderr)
+    print(summary, file=fo)
+    fo.close()
 
     ## Kaldi compatible logging
     print(F'%WER {ter:.2f} [ {S + D + I} / {C + S + D}, {I} ins, {D} del, {S} sub ]')
