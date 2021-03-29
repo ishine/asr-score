@@ -2,7 +2,7 @@
 * self-contained, zero dependency
 * support kaldi ark formated hyp/ref
 
-usage:
+## usage
 ```
 ./compute-wer \
     --text-norm en \
@@ -48,7 +48,7 @@ basically, `json line` and `%WER line`(compatible with kaldi) have same infomati
 ...
 ```
 
-# options for ASR result post-processing(preprocessing for WER evaluation)
+## options for ASR result post-processing(preprocessing for WER evaluation)
 1. `--text-norm` option, can be omitted(without TN), or `en`, or `cn`, for `en` TN: 
    * remove non-scoring tags:
       ```
