@@ -78,7 +78,9 @@ def normalize_text_cn(text):
     return text
 
 def normalize_text(text, normalizer):
-    if normalizer == 'en':
+    if normalizer == '':
+        return text
+    elif normalizer == 'en':
         return normalize_text_en(text)
     elif normalizer == 'cn':
         return normalize_text_cn(text)
