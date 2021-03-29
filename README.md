@@ -49,7 +49,9 @@ basically, `json line` and `%WER line`(compatible with kaldi) have same infomati
 ```
 
 ## options for ASR result post-processing(preprocessing for WER evaluation)
-1. `--text-norm` option, can be omitted(without TN), or `en`, or `cn`, for `en` TN: 
+1. `--normalizer` option, can be omitted(without TN), or `en`, or `cn`. Currently `en` normalization applies following steps:
+   * convert text to upper case
+   * remove `-`, `"`
    * remove non-scoring tags:
       ```
        sclite_conversational_filler = ['UH', 'UHH', 'UM', 'EH', 'MM', 'HM', 'AH', 'HUH', 'HA', 'ER', 'OOF', 'HEE' , 'ACH', 'EEE', 'EW']
@@ -57,6 +59,5 @@ basically, `json line` and `%WER line`(compatible with kaldi) have same infomati
        gigaspeech_punctuations = ['<COMMA>', '<PERIOD>', '<QUESTIONMARK>', '<EXCLAMATIONPOINT>']
        gigaspeech_garbage_utterance_tags = ['<SIL>', '<NOISE>', '<MUSIC>', '<OTHER>']
       ``` 
-   * remove `-`, `"`
 
 2. `--tokenizer` option, can be set to `whitespace`(for WER), or `char`(for CER). default is (whitespace)
