@@ -77,19 +77,22 @@ def normalize_text_cn(text):
     # TODO
     return text
 
-def normalize_text(text, lang):
-    if lang == 'en':
+def normalize_text(text, normalizer):
+    if normalizer == 'en':
         return normalize_text_en(text)
-    if lang == 'cn':
+    elif normalizer == 'cn':
         return normalize_text_cn(text)
+    else:
+        print(F'ERROR: Unsupported normalizer {normalizer}', file=sys.stderr)
+        raise RuntimeError
 
-def tokenize(text, tokenizer):
+def tokenize_text(text, tokenizer):
     if tokenizer == 'whitespace':
         return text.split()
     elif tokenizer == 'char':
         return [ ch for ch in ''.join(text.split()) ]
     else:
-        print(F'ERROR: Unsupported tokenizer {tokenizer}')
+        print(F'ERROR: Unsupported tokenizer {tokenizer}', file=sys.stderr)
         raise RuntimeError
 
 def similarity_score_function(ref_token, hyp_token):
@@ -322,7 +325,7 @@ class EvaluationResult:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     # optional
-    parser.add_argument('--text-norm', choices=['', 'en', 'cn'], default='', help='by default this option is empty, which means no TN is performed towards loaded text')
+    parser.add_argument('--normalizer', choices=['', 'en', 'cn'], default='', help='by default this option is empty, which means no TN is performed towards loaded text')
     parser.add_argument('--tokenizer', choices=['whitespace', 'char'], default='whitespace', help='whitespace for WER, char for CER')
     parser.add_argument('--ref-format', choices=['text'], default='text', help='reference format, first col is utt_id, the rest is text')
     parser.add_argument('--hyp-format', choices=['text'], default='text', help='hypothesis format, first col is utt_id, the rest is text')
@@ -338,11 +341,11 @@ if __name__ == '__main__':
     hyp_utts = LoadUtterances(args.hyp, args.hyp_format); # print(F'{len(hyp_utts)} HYP utterances loaded.', file=sys.stderr)
 
     # text normalization
-    if args.text_norm:
+    if args.normalizer:
         for uid, utt in ref_utts.items():
-            utt.text = normalize_text(utt.text, args.text_norm)
+            utt.text = normalize_text(utt.text, args.normalizer)
         for uid, utt in hyp_utts.items():
-            utt.text = normalize_text(utt.text, args.text_norm)
+            utt.text = normalize_text(utt.text, args.normalizer)
 
     r = EvaluationResult()
 
@@ -368,8 +371,8 @@ if __name__ == '__main__':
         ref = ref_utts[uid]
         hyp = hyp_utts[uid]
 
-        ref.tokens = tokenize(ref.text, args.tokenizer)
-        hyp.tokens = tokenize(hyp.text, args.tokenizer)
+        ref.tokens = tokenize_text(ref.text, args.tokenizer)
+        hyp.tokens = tokenize_text(hyp.text, args.tokenizer)
 
         alignment, score = EditDistance(ref.tokens, hyp.tokens)
         c, s, i, d = CountEdits(alignment)
