@@ -77,7 +77,7 @@ def normalize_text_cn(text):
     # TODO
     return text
 
-def normalize(text, lang):
+def normalize_text(text, lang):
     if lang == 'en':
         return normalize_text_en(text)
     if lang == 'cn':
@@ -337,6 +337,13 @@ if __name__ == '__main__':
     ref_utts = LoadUtterances(args.ref, args.ref_format); # print(F'{len(ref_utts)} REF utterances loaded.', file=sys.stderr)
     hyp_utts = LoadUtterances(args.hyp, args.hyp_format); # print(F'{len(hyp_utts)} HYP utterances loaded.', file=sys.stderr)
 
+    # text normalization
+    if args.text_norm:
+        for uid, utt in ref_utts.items():
+            utt.text = normalize_text(utt.text, args.text_norm)
+        for uid, utt in hyp_utts.items():
+            utt.text = normalize_text(utt.text, args.text_norm)
+
     r = EvaluationResult()
 
     # check valid utterances in hyp that have matched non-empty reference
@@ -344,12 +351,12 @@ if __name__ == '__main__':
     r.num_hyp_without_ref = 0
     for uid in sorted(hyp_utts.keys()):
         if uid in ref_utts.keys(): # TODO: efficiency
-            if ref_utts[uid].text.strip(): # non empty reference
+            if ref_utts[uid].text.strip(): # non-empty reference
                 eval_utts.append(uid)
             else:
                 print(F'WARNING: found {uid} with empty reference, skipping...', file=sys.stderr)
-                continue
         else:
+            print(F'WARNING: found {uid} without reference, skipping...', file=sys.stderr)
             r.num_hyp_without_ref += 1
 
     r.num_hyp_utts = len(hyp_utts)
@@ -361,8 +368,8 @@ if __name__ == '__main__':
         ref = ref_utts[uid]
         hyp = hyp_utts[uid]
 
-        ref.tokens = tokenize(normalize(ref.text, args.text_norm) if args.text_norm else ref.text, args.tokenizer)
-        hyp.tokens = tokenize(normalize(hyp.text, args.text_norm) if args.text_norm else hyp.text, args.tokenizer)
+        ref.tokens = tokenize(ref.text, args.tokenizer)
+        hyp.tokens = tokenize(hyp.text, args.tokenizer)
 
         alignment, score = EditDistance(ref.tokens, hyp.tokens)
         c, s, i, d = CountEdits(alignment)
