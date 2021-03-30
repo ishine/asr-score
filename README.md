@@ -4,10 +4,10 @@
 
 ## usage
 ```
-./compute-wer \
-    --normalizer en \
-    --tokenizer whitespace \
-    --ref ref.txt --hyp hyp.txt diagnostics.txt 1> summary.txt
+./asr-score --tokenizer whitespace \
+    --ref ref.txt \
+    --hyp hyp.txt \
+    diagnostics.txt
 ```
 
 `ref.txt`:
@@ -26,15 +26,15 @@ EdevDEWdIYQ_0011	 可 以 啊 它 不 会 是 那 种 特 别 特 别 润 的 �
 ...
 ```
 
-`summary.txt`:
+standard output:
 ```
 {"num_ref_utts": 10, "num_hyp_utts": 10, "num_eval_utts": 10, "num_hyp_without_ref": 0, "C": 290, "S": 28, "I": 8, "D": 7, "token_error_rate": 13.23076923076923, "num_utts_with_error": 9, "sentence_error_rate": 90.0}
 %WER 13.23 [ 43 / 325, 8 ins, 7 del, 28 sub ]
 %SER 90.00 [ 9 / 10 ]
 ```
-basically, `json line` and `%WER line`(compatible with kaldi) have same infomation, you can choose either to parse for your convenience. 
+You can parse either `json` or `%WER/SER` lines(compatible with kaldi).
 
-`diagnostics.txt` contains utterance-level alignment details which is friendly for human checking:
+`diagnostics.txt` contains human-friendly alignment details utterance by utterance:
 ```
 {"uid":EdevDEWdIYQ_0021, "score":-3.0, "ter":16.67, "cor":15, "sub":3, "ins":0, "del":0}
     REF: 这 支 颜 色 好 不 好 看 你 们 觉 得 好 看 吗 好 卸 吗 
