@@ -1,4 +1,4 @@
-# dependency-free WER & CER calculator in Python3
+# Zero-Dependency WER & CER calculator for ASR evaluation (Python3)
 * self-contained, zero dependency
 * support kaldi ark formated hyp/ref
 
@@ -49,15 +49,22 @@ You can parse either `json` or `%WER/SER` lines(compatible with kaldi).
 ```
 
 ## options for ASR result post-processing(preprocessing for WER evaluation)
-1. `--normalizer` option, can be omitted(without TN), or `en`, or `cn`. Currently `en` normalization applies following steps:
-   * convert text to upper case
-   * remove `-`, `"`
-   * remove non-scoring tags:
-      ```
-       sclite_conversational_filler = ['UH', 'UHH', 'UM', 'EH', 'MM', 'HM', 'AH', 'HUH', 'HA', 'ER', 'OOF', 'HEE' , 'ACH', 'EEE', 'EW']
-       unk_tags = ['<UNK>', '<unk>']
-       gigaspeech_punctuations = ['<COMMA>', '<PERIOD>', '<QUESTIONMARK>', '<EXCLAMATIONPOINT>']
-       gigaspeech_garbage_utterance_tags = ['<SIL>', '<NOISE>', '<MUSIC>', '<OTHER>']
-      ``` 
+1. `--normalizer` option, can be omitted(without TN), or `EN`, or `CN`.
+
+    `EN` normalizer applies following steps:
+    * convert text to upper case
+    * remove `-`, `"`
+    * remove non-scoring tags:
+        ```
+        sclite_conversational_filler = ['UH', 'UHH', 'UM', 'EH', 'MM', 'HM', 'AH', 'HUH', 'HA', 'ER', 'OOF', 'HEE' , 'ACH', 'EEE', 'EW']
+        unk_tags = ['<UNK>', '<unk>']
+        gigaspeech_punctuations = ['<COMMA>', '<PERIOD>', '<QUESTIONMARK>', '<EXCLAMATIONPOINT>']
+        gigaspeech_garbage_utterance_tags = ['<SIL>', '<NOISE>', '<MUSIC>', '<OTHER>']
+        ``` 
+    
+    `CN` normalizer:
+    * TODO: integrate https://github.com/speechio/chinese_text_normalization
 
 2. `--tokenizer` option, can be set to `whitespace`(for WER), or `char`(for CER). default is (whitespace)
+    * `whitespace` tokenizer gives WER
+    * `char` tokenizer gives CER
