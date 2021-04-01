@@ -7,7 +7,7 @@
 ./asr-score --tokenizer whitespace \
     --ref ref.txt \
     --hyp hyp.txt \
-    diagnostics.txt
+    score.txt
 ```
 
 `ref.txt`:
@@ -34,7 +34,7 @@ standard output:
 ```
 You can parse either `json` or `%WER/SER` lines(compatible with kaldi).
 
-`diagnostics.txt` contains human-friendly alignment details utterance by utterance:
+`score.txt` contains human-friendly alignment details utterance by utterance:
 ```
 {"uid":EdevDEWdIYQ_0021, "score":-3.0, "ter":16.67, "cor":15, "sub":3, "ins":0, "del":0}
     REF: 这 支 颜 色 好 不 好 看 你 们 觉 得 好 看 吗 好 卸 吗 
@@ -49,9 +49,9 @@ You can parse either `json` or `%WER/SER` lines(compatible with kaldi).
 ```
 
 ## options for ASR result post-processing(preprocessing for WER evaluation)
-1. `--normalizer` option, can be omitted(without TN), or `EN`, or `CN`.
+1. `--normalizer` specifies the language for text normalization, following ISO639-1 code. Skip this option if you don't want TN.
 
-    `EN` normalizer applies following steps:
+    `en` normalizer applies following steps:
     * convert text to upper case
     * remove `-`, `"`
     * remove non-scoring tags:
@@ -62,7 +62,7 @@ You can parse either `json` or `%WER/SER` lines(compatible with kaldi).
         gigaspeech_garbage_utterance_tags = ['<SIL>', '<NOISE>', '<MUSIC>', '<OTHER>']
         ``` 
     
-    `CN` normalizer:
+    `zh` normalizer:
     * TODO: integrate https://github.com/speechio/chinese_text_normalization
 
 2. `--tokenizer` option, can be set to `whitespace`(for WER), or `char`(for CER). default is (whitespace)
